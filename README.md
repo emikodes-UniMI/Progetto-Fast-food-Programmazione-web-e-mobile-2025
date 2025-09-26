@@ -1,4 +1,4 @@
-<h1><img src="public/assets/logo.png" alt="LOGO" width="100"/>Relazione Progetto di Programmazione Web e Mobile - A.A 2025/2026 - Fast Food - Ingenito Emiddio</h1>
+<h1><img src="public/assets/logo.png" alt="LOGO" width="100"/>Progetto di Programmazione Web e Mobile "Fast Food" - Ingenito Emiddio</h1>
 
 ---
 
