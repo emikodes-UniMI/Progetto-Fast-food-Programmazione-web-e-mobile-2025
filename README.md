@@ -1,4 +1,4 @@
-<h1><img src="public/assets/logo.png" alt="LOGO" width="50"/>Progetto di Programmazione Web e Mobile "Fast Food" - Ingenito Emiddio</h1>
+<h2><img src="public/assets/logo.png" alt="LOGO" width="50"/>Progetto di Programmazione Web e Mobile "Fast Food" - Ingenito Emiddio</h2>
 
 ---
 
