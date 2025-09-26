@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FastFood - Carrello</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .sidebar {
+      width: 250px;
+      background-color: #ffffff;
+      box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+    }
+    .sidebar-header {
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+    .sidebar-header img {
+      max-width: 150px;
+    }
+    .sidebar a.nav-link {
+      color: #555;
+      padding: 0.75rem 1rem;
+      border-radius: 0.5rem;
+      margin-bottom: 0.5rem;
+      text-decoration: none;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    .sidebar a.nav-link.active,
+    .sidebar a.nav-link:hover {
+      background-color: #fecd4c;
+      color: #000;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #ffffff;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      min-height: 100vh;
+    }
+    .main-content {
+      flex: 1;
+      padding: 2rem;
+    }
+    .cart-container {
+      max-width: 600px;
+      margin: auto;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <script>
+    (function() {
+      var token = localStorage.getItem("token");
+      var role = localStorage.getItem("role");
+      if (!token || role !== "cliente") {
+        window.location.href = "../login.html";
+      }
+    })();
+  </script>
+
+   <div class="sidebar">
+    <div class="sidebar-header">
+      <img src="../assets/logo.png" alt="FastFood Logo" />
+    </div>
+    <a href="home.html" class="nav-link">Home</a>
+    <a href="carrello.html" class="nav-link active">Carrello</a>
+    <a href="ordini.html" class="nav-link">Ordini</a>
+    <a href="../profilo.html" class="nav-link">Profilo</a>
+    <a href="../logout.html" class="nav-link">Logout</a>
+  </div>
+
+  <div class="main-content">
+    <h2>Carrello</h2>
+    <div class="cart-container">
+      <div id="cartItems"></div>
+      <button id="orderBtn" class="btn btn-warning w-100">Ordina</button>
+      <div id="message" class="mt-3"></div>
+    </div>
+  </div>
+
+  <script>
+    var apiBase = "http://localhost:3000";
+    var carrello = [];
+    var indirizzoUtente = "";
+
+    async function fetchConControlloToken(url, options = {}) {
+      var token = localStorage.getItem("token");
+    
+      if (!token) {
+        window.location.href = "../logout.html";
+        return;
+      }
+    
+      options.headers = options.headers || {};
+      options.headers["Authorization"] = "Bearer " + token;
+    
+      try {
+        let response = await fetch(url, options);
+    
+        if (response.status === 401) { // token scaduto o invalido
+            window.location.href = "../logout.html";
+          }
+    
+        return response;
+      } catch (error) {
+        console.error("Errore nella richiesta API:", error);
+        return null;
+      }
+    }
+
+    async function recuperaCarrello() {
+      try {
+        var response = await fetchConControlloToken(apiBase + "/carts/me", {
+          headers: { "Authorization": "Bearer " + localStorage.getItem("token") }
+        });
+
+        if (!response.ok) throw new Error("Errore nel caricamento del carrello.");
+
+        carrello = await response.json();
+        mostraCarrello();
+      } catch (err) {
+        document.getElementById("cartItems").innerHTML = '<p class="text-muted">Il carrello è vuoto.</p>';
+      }
+    }
+
+    async function recuperaIndirizzoUtente() {
+      try {
+        var response = await fetchConControlloToken(apiBase + "/users/me", {
+          headers: { "Authorization": "Bearer " + localStorage.getItem("token") }
+        });
+        var user = await response.json();
+        indirizzoUtente = user.indirizzo || "";
+      } catch (err) {
+        console.error("Errore nel recupero dell'indirizzo utente:", err);
+      }
+    }
+
+    async function mostraCarrello() {
+    var container = document.getElementById("cartItems");
+    container.innerHTML = "";
+
+    if (carrello.meals.length === 0) {
+      container.innerHTML = '<p class="text-muted">Il carrello è vuoto.</p>';
+      return;
+    }
+
+  var gruppiPerRistorante = {};
+  var ristoranteNomi = {};
+
+  await Promise.all(carrello.meals.map(async function (piatto) {
+    if (!ristoranteNomi[piatto.ristorante_id]) {
+      try {
+        var response = await fetchConControlloToken(`${apiBase}/restaurants/${piatto.ristorante_id}`);
+        if (response.ok) {
+          var ristorante = await response.json();
+          ristoranteNomi[piatto.ristorante_id] = ristorante.name;
+        }
+      } catch (err) {
+        console.error(`Errore nel recupero del ristorante ${piatto.ristorante_id}:`, err);
+        ristoranteNomi[piatto.ristorante_id] = "Ristorante Sconosciuto";
+      }
+    }
+  }));
+
+  carrello.meals.forEach(function (piatto) {
+    gruppiPerRistorante[piatto.ristorante_id] = gruppiPerRistorante[piatto.ristorante_id] || [];
+    gruppiPerRistorante[piatto.ristorante_id].push(piatto);
+  });
+
+  Object.keys(gruppiPerRistorante).forEach(function (ristoranteId) {
+    var ristoranteHeader = document.createElement("h4");
+    ristoranteHeader.textContent = `Ordine da ${ristoranteNomi[ristoranteId]}`;
+    container.appendChild(ristoranteHeader);
+
+    gruppiPerRistorante[ristoranteId].forEach(function (piatto) {
+      var item = document.createElement("div");
+      item.className = "d-flex justify-content-between align-items-center mb-3";
+      item.innerHTML = `
+        <strong>${piatto.nome}</strong>  
+        <span>${piatto.quantita} x €${piatto.prezzo_unitario.toFixed(2)}</span>
+        <button class="btn btn-danger btn-sm" onclick="rimuoviDalCarrello('${piatto._id}')">Elimina</button>`;
+      container.appendChild(item);
+    });
+    var item = document.createElement("div");
+      item.innerHTML = `
+        <br>
+        <input type="radio" name="ritiro_${ristoranteId}" value="Ritiro in ristorante" checked> Ritiro in ristorante
+        <input type="radio" name="ritiro_${ristoranteId}" value="Consegna a domicilio: ${indirizzoUtente}"> Consegna a domicilio<br><br><hr>`
+        container.appendChild(item);
+
+    });
+}
+
+    async function rimuoviDalCarrello(mealId) {
+      try {
+        var response = await fetchConControlloToken(apiBase + "/carts/remove", {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + localStorage.getItem("token")
+          },
+          body: JSON.stringify({ meal_id: mealId })
+        });
+
+        if (!response.ok) throw new Error("Errore nella rimozione dal carrello.");
+
+        carrello = await response.json();
+        mostraCarrello();
+      } catch (err) {
+        console.error("Errore nella rimozione dal carrello:", err);
+      }
+    }
+
+    document.getElementById("orderBtn").addEventListener("click", async function () {
+        if (!carrello || carrello.meals.length === 0) {
+          alert("Il carrello è vuoto!");
+          return;
+        }
+
+        var sceltaRitiro = {};
+
+        carrello.meals.forEach(meal => {
+          var ristoranteId = meal.ristorante_id;
+          var scelta = document.querySelector(`input[name="ritiro_${ristoranteId}"]:checked`).value;
+          sceltaRitiro[ristoranteId] = scelta;
+        });
+
+        var ordiniPerRistoranti = {};
+
+        carrello.meals.forEach((p) => {
+          ordiniPerRistoranti[p.ristorante_id] = ordiniPerRistoranti[p.ristorante_id] || [];
+          ordiniPerRistoranti[p.ristorante_id].push({
+            _id: p.meal_id,
+            nome: p.nome,
+            quantita: p.quantita,
+            prezzo_unitario: p.prezzo_unitario,
+            tempo_preparazione: p.tempo_preparazione || 10,
+            ristorante_id : p.ristorante_id
+          });
+        });
+
+        try {
+          await Promise.all(
+            Object.keys(ordiniPerRistoranti).map(async function (ristoranteId) {
+              var orderPayload = {
+                meals: ordiniPerRistoranti[ristoranteId],
+                metodo_consegna: sceltaRitiro[ristoranteId]
+              };
+
+              var response = await fetchConControlloToken(apiBase + "/orders", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": "Bearer " + localStorage.getItem("token"),
+                },
+                body: JSON.stringify(orderPayload),
+              });
+
+              if (!response.ok) {
+                var errorText = await response.text();
+                throw new Error(`Errore HTTP ${response.status}: ${errorText}`);
+              }
+            })
+          );
+
+          var deleteCartResponse = await fetchConControlloToken(apiBase + "/carts/me", {
+            method: "DELETE",
+            headers: { "Authorization": "Bearer " + localStorage.getItem("token") },
+          });
+
+        if (!deleteCartResponse.ok) {
+          throw new Error("Errore nell'eliminazione del carrello.");
+        }
+
+        alert("Ordine effettuato con successo!");
+        recuperaCarrello();
+      } catch (err) {
+        console.error("Errore nell'ordine:", err);
+        alert(`Errore durante l'ordine: ${err.message}`);
+      }
+    });
+
+
+
+    (async function init() {
+      await recuperaIndirizzoUtente();
+      await recuperaCarrello();
+    })();
+  </script>
+</body>
+</html>

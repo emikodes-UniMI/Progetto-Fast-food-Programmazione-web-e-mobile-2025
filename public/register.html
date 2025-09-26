@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FastFood - Registrazione</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <style>
+    body {
+      background-color: #fef9e7;
+      font-family: Arial, sans-serif;
+    }
+    .register-container {
+      max-width: 500px;
+      margin: 50px auto;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      padding: 30px;
+    }
+    .form-label {
+      color: #00B5A2;
+    }
+    .btn-primary {
+      background-color: #f4c430;
+      border: none;
+      color: black;
+    }
+    .btn-primary:hover {
+      background-color: #e0b12a;
+    }
+    .logo {
+      display: block;
+      margin: 0 auto 20px;
+      max-width: 80px;
+    }
+    h2 {
+      color: #00B5A2;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    #alert {
+      margin-top: 20px;
+    }
+    .login-link {
+      display: block;
+      text-align: center;
+      margin-top: 15px;
+      color: #00B5A2;
+      font-weight: bold;
+      text-decoration: none;
+    }
+    .login-link:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="register-container">
+    <a href="index.html"><img src="assets/logo.png" alt="FastFood Logo" class="logo" /></a>
+    <h2>Registrazione</h2>
+    <form id="registerForm" novalidate>
+      <div class="mb-3">
+        <label for="username" class="form-label">Username *</label>
+        <input type="text" class="form-control" id="username"/>
+      </div>
+      <div class="mb-3">
+        <label for="email" class="form-label">Email *</label>
+        <input type="email" class="form-control" id="email" />
+      </div>
+      <div class="mb-3">
+        <label for="password" class="form-label">Password *</label>
+        <input type="password" class="form-control" id="password"/>
+      </div>
+      <div class="mb-3">
+        <label for="numero_di_telefono" class="form-label">Numero di telefono *</label>
+        <input type="text" class="form-control" id="numero_di_telefono"/>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Ruolo *</label>
+        <select class="form-select" id="role">
+          <option value="cliente" selected>Cliente</option>
+          <option value="ristoratore">Ristoratore</option>
+        </select>
+      </div>
+
+      <div id="clienteFields">
+        <div class="mb-3">
+          <label for="indirizzo" class="form-label">Indirizzo*</label>
+          <input type="text" class="form-control" id="indirizzo"/>
+        </div>
+        <div class="mb-3">
+          <label for="metodo_pagamento" class="form-label">Metodo di pagamento*</label>
+          <input type="text" class="form-control" id="metodo_pagamento"/>
+        </div>
+      </div>
+
+      <div id="ristoratoreFields">
+        <div class="mb-3">
+          <label for="piva" class="form-label">P.IVA*</label>
+          <input type="text" class="form-control" id="piva"/>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary w-100">Registrati</button>
+    </form>
+    <div id="alert"></div>
+    <a href="login.html" class="login-link">Hai già un account? Accedi</a>
+  </div>
+
+  <script>
+    const roleSelect = document.getElementById('role');
+    const clienteFields = document.getElementById('clienteFields');
+    const ristoratoreFields = document.getElementById('ristoratoreFields');
+    const form = document.getElementById('registerForm');
+    const alertDiv = document.getElementById('alert');
+
+    function updateFields() {
+      if(roleSelect.value === 'cliente'){
+        clienteFields.style.display = 'block';
+        ristoratoreFields.style.display = 'none';
+      } else {
+        clienteFields.style.display = 'none';
+        ristoratoreFields.style.display = 'block';
+      }
+    }
+
+    roleSelect.addEventListener('change', updateFields);
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const username = document.getElementById('username').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const numero_di_telefono = document.getElementById('numero_di_telefono').value.trim();
+      const role = roleSelect.value;
+      const indirizzo = role === 'cliente' ? document.getElementById('indirizzo').value.trim() : "";
+      const metodo_pagamento = role === 'cliente' ? document.getElementById('metodo_pagamento').value.trim() : "";
+      const piva = role === 'ristoratore' ? document.getElementById('piva').value.trim() : "";
+
+      const payload = { username, email, password, numero_di_telefono, role, indirizzo, metodo_pagamento, piva };
+      alertDiv.innerHTML = "";
+
+      try {
+        const res = await fetch("http://localhost:3000/users/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          alertDiv.innerHTML = `<div class="alert alert-success text-center">Registrazione completata! Vai al <a href="login.html">login</a>.</div>`;
+          form.reset();
+          updateFields();
+        } else {
+          alertDiv.innerHTML = `<div class="alert alert-danger text-center">${data.error || "Errore nella registrazione"}</div>`;
+        }
+      } catch (err) {
+        alertDiv.innerHTML = `<div class="alert alert-danger text-center">Errore di rete</div>`;
+      }
+    });
+
+    updateFields();
+  </script>
+</body>
+</html>

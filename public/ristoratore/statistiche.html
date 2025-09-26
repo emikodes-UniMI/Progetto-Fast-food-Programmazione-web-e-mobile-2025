@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FastFood - Statistiche Ristorante</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #fff;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      min-height: 100vh;
+    }
+    .sidebar {
+      width: 250px;
+      background: #fff;
+      box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+    }
+    .sidebar-header {
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+    .sidebar-header img {
+      max-width: 150px;
+    }
+    .sidebar a.nav-link {
+      color: #555;
+      padding: 0.75rem 1rem;
+      border-radius: 0.5rem;
+      margin-bottom: 0.5rem;
+      text-decoration: none;
+    }
+    .sidebar a.nav-link.active {
+      background-color: #fecd4c;
+      color: #000;
+    }
+    .main-content {
+      flex: 1;
+      padding: 2rem;
+      overflow-y: auto;
+    }
+    h2 {
+      color: #00B5A2;
+      margin-bottom: 1.5rem;
+    }
+    .stats-card {
+      border: 1px solid #ddd;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      background-color: #f9f9f9;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <script>
+    (function() {
+      var token = localStorage.getItem("token");
+      var role = localStorage.getItem("role");
+      if (!token || role !== "ristoratore") {
+        window.location.href = "../login.html";
+      }
+    })();
+  </script>
+
+<div class="sidebar">
+  <div class="sidebar-header">
+    <img src="../assets/logo.png" alt="FastFood Logo">
+  </div>
+  <a href="home.html" class="nav-link">Dashboard</a>
+  <a href="gestioneRistorante.html" class="nav-link">Gestisci Ristorante</a>
+  <a href="piattiGenerici.html" class="nav-link">Aggiungi Piatto Generico</a>
+  <a href="piattoPersonalizzato.html" class="nav-link">Aggiungi Piatto Personalizzato</a>
+  <a href="modificaPiattoPersonalizzato.html" class="nav-link">Modifica Piatto Personalizzato</a>
+  <a href="ordini.html" class="nav-link">Ordini</a>
+  <a href="statistiche.html" class="nav-link active">Statistiche</a>
+  <a href="../profilo.html" class="nav-link">Profilo</a>
+  <a href="../logout.html" class="nav-link">Logout</a>
+
+</div>
+
+<div class="main-content">
+  <h2>Statistiche Ristorante</h2>
+
+  <div id="contentArea">
+    <div class="stats-card"><strong>Totale Ordini:</strong> <span id="totalOrders">...</span></div>
+    <div class="stats-card"><strong>Ricavo Totale:</strong> €<span id="totalRevenue">...</span></div>
+    <div class="stats-card"><strong>Ordini per Stato:</strong> <div id="ordersByState"></div></div>
+    <div class="stats-card"><strong>Piatti più ordinati:</strong> <div id="topMeals"></div></div>
+    <div class="stats-card"><strong>Andamento Ordini (ultimi 30gg):</strong> <div id="ordersTrend"></div></div>
+  </div>
+
+</div>
+
+<script>
+  var apiBase = "http://localhost:3000";
+  var token = localStorage.getItem("token");
+
+  async function fetchConControlloToken(url, options = {}) {
+      var token = localStorage.getItem("token");
+    
+      if (!token) {
+        window.location.href = "../logout.html";
+        return;
+      }
+    
+      options.headers = options.headers || {};
+      options.headers["Authorization"] = "Bearer " + token;
+    
+      try {
+        let response = await fetch(url, options);
+    
+        if (response.status === 401) { // token scaduto o invalido
+            window.location.href = "../logout.html";
+          }
+    
+        return response;
+      } catch (error) {
+        console.error("Errore nella richiesta API:", error);
+        return null;
+      }
+    }
+
+  async function caricaStatistiche() {
+    try {
+      var response = await fetchConControlloToken(apiBase + "/restaurants/statistics");
+      if (!response || !response.ok) return;
+
+      var stats = await response.json();
+
+      if (stats.totalOrders === 0) {
+        contentArea.innerHTML = 
+            '<div class="d-flex flex-column justify-content-center align-items-center" style="min-height:300px;">' +
+              '<p class="fs-4 text-muted mb-3">Non hai ancora completato ordini</p>' +
+              '<a href="ordini.html" class="btn btn-warning">Vai alla pagina ordini</a>' +
+            '</div>';        return;
+      } else {
+        document.getElementById("totalOrders").innerText = stats.totalOrders;
+        document.getElementById("totalRevenue").innerText = stats.totalRevenue?.toFixed(2) ?? "N/A";
+
+        var stateContainer = document.getElementById("ordersByState");
+        stateContainer.innerHTML = Object.entries(stats.ordersByState)
+          .map(([stato, count]) => `<p>${stato}: ${count}</p>`).join("");
+
+        var mealsContainer = document.getElementById("topMeals");
+        mealsContainer.innerHTML = stats.topMeals.map(([nome, quantita]) => `<p>${nome}, Ordinato ${quantita} Volte</p>`).join("");
+
+        var trendContainer = document.getElementById("ordersTrend");
+        trendContainer.innerHTML = Object.entries(stats.ordersTrend)
+          .map(([date, count]) => `<p>${date}: ${count} ordini</p>`).join("");
+      }
+    } catch (err) {
+      console.error("Errore nel caricamento delle statistiche:", err);
+    }
+  }
+
+  caricaStatistiche();
+</script>
+
+</body>
+</html>
