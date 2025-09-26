@@ -75,7 +75,7 @@ All’interno del DB “fastfood”, sono memorizzate 5 collections:
     
 ![READMEImages/meals.png](READMEImages/meals.png)
     
-    Ogni piatto è identificato da un indice. Inoltre, sono stati aggiunti i campi “`prezzo`” (in euro), “`tempo_preparazione`” (in minuti), e `ristorante_id`, il cui valore è `null` per i piatti generici, e corrisponde all’`id` di un ristorante registrato, per i piatti personalizzati di uno specifico ristorante.
+Ogni piatto è identificato da un indice. Inoltre, sono stati aggiunti i campi “`prezzo`” (in euro), “`tempo_preparazione`” (in minuti), e `ristorante_id`, il cui valore è `null` per i piatti generici, e corrisponde all’`id` di un ristorante registrato, per i piatti personalizzati di uno specifico ristorante.
     
 - orders - Ordini effettuati
 - restaurants - Ristoranti registrati
