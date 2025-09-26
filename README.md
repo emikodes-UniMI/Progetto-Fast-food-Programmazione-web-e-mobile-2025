@@ -11,7 +11,6 @@ E’ possibile raggiungere la pagina iniziale, aprendo il file `index.html`
 # Struttura della directory
 
 ```
-┗ 📂fastfood
 ┣ 📂Documents
 	//Traccia del progetto, swagger
 ┃ ┣ 📜meals.json
