@@ -1,7 +1,9 @@
 <img src="public/assets/logo.png" alt="LOGO" width="200"/>
 
 <h1>Relazione Progetto di Programmazione Web e Mobile - A.A 2025/2026 - Fast Food - Ingenito Emiddio</h1>
+
 ---
+
 # Getting Started
 
 Per avviare l’applicazione, navigare nella directory `fastfood`, ed installare i `node_modules` necessari eseguendo il comando `npm install`
