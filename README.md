@@ -1,3 +1,5 @@
+![LOGO](public/assets/logo.png)
+
 # Relazione Progetto di Programmazione Web e Mobile - A.A 2025/2026 - Fast Food - Ingenito Emiddio
 
 # Getting Started
